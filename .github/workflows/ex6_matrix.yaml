@@ -1,19 +1,58 @@
-name: npm test
+name: matrix
 on: 
   workflow_dispatch:
 
 jobs:
   run-npm-install:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, unbuntu-18.04]
+        version: [14, lts/*]
+        include: 
+          - os: ubuntu-latest
+            version : 12
+    runs-on: ${{ matrix.os }}
     steps:
         - name: checkout
           uses: actions/checkout@v3
-        - name : setup node
+        - name: setup node
           uses: actions/setup-node@v3
           with:
-            node-version: 'lts/*'
+            node-version: ${{ matrix.version }}
+        - uses: actions/cache@v3
+          with:
+            path: ./node-modules
+            key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+            restore-keys: |
+              ${{ runner.os }}-node-
         - name: run install
           shell: bash
           run: |
             npm install
+        
+  run-npm-test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, unbuntu-18.04]
+        version: [14, lts/*]
+        include: 
+          - os: ubuntu-latest
+            version : 12
+    runs-on: ${{ matrix.os }}
+    steps:
+        - name: checkout
+          uses: actions/checkout@v3
+        - name: setup node
+          uses: actions/setup-node@v3
+          with:
+            node-version: ${{ matrix.version }}
+        - uses: actions/cache@v3
+          with:
+            path: ./node-modules
+            key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+            restore-keys: |
+              ${{ runner.os }}-node-
+        - name: run test
+          shell: bash
+          run: |
             npm test
